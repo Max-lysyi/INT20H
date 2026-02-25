@@ -35,10 +35,6 @@ CREATE TABLE orders (
 );
 
 
-
-
-
-
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
@@ -59,3 +55,12 @@ If you are developing a production application, we recommend using TypeScript wi
 # INT20H
 INT20H - This is a task for passing the selection for the INT20H hackathon in which the use of the API with polygons was implemented. Frontend: React(Vite) Teilwind JS. Beckend: pgAdmin 4, SQL, Node.js
 >>>>>>> 8370f60f87538940d2b4afb046df006b77a8dc3d
+
+
+### 2. Запуск бази даних через Docker
+
+```docker compose up -d```
+
+
+
+
