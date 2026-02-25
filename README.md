@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Delivery Tax Calculator (BetterMe Test Task)
 
 Це Fullstack додаток для розрахунку податків на доставку дронами в штаті Нью-Йорк. Система визначає податкову юрисдикцію (NYC, Albany, Syracuse, Yonkers або загальний штат) на основі координат та розраховує фінальну вартість замовлення.
@@ -54,3 +55,7 @@ The React Compiler is not enabled on this template because of its impact on dev 
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+=======
+# INT20H
+INT20H - This is a task for passing the selection for the INT20H hackathon in which the use of the API with polygons was implemented. Frontend: React(Vite) Teilwind JS. Beckend: pgAdmin 4, SQL, Node.js
+>>>>>>> 8370f60f87538940d2b4afb046df006b77a8dc3d
