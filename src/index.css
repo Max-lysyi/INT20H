@@ -1,0 +1,11 @@
+@import "tailwindcss";
+@import "tailwindcss";
+@layer base {
+  html {
+    
+  }
+  
+  h1 {
+    @apply text-3xl font-bold; 
+  }
+}
