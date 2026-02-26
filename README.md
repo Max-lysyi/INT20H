@@ -18,49 +18,17 @@
 
 ## ⚙️ Як запустити проект
 
-### 1. Налаштування Бази Даних
-Переконайтеся, що у вас встановлено PostgreSQL.
-1. Створіть базу даних з назвою `delivery_db`.
-2. Таблиця `orders` створиться автоматично при першому запиті, або ви можете виконати SQL-скрипт:
-```sql
-CREATE TABLE orders (
-    id SERIAL PRIMARY KEY,
-    latitude DECIMAL(10, 8),
-    longitude DECIMAL(11, 8),
-    subtotal DECIMAL(10, 2),
-    tax_amount DECIMAL(10, 2),
-    total_amount DECIMAL(10, 2),
-    jurisdiction VARCHAR(255),
-    created_at TIMESTAMP DEFAULT NOW()
-);
+### 1. Білд додатку
 
+```make build```
 
-# React + Vite
+### 2. Запуск додатку
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+```make start```
 
-Currently, two official plugins are available:
+Додаток доступний на айпі адресі ```0.0.0.0:5000```
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 3. Зупинка додатку
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
-=======
-# INT20H
-INT20H - This is a task for passing the selection for the INT20H hackathon in which the use of the API with polygons was implemented. Frontend: React(Vite) Teilwind JS. Beckend: pgAdmin 4, SQL, Node.js
->>>>>>> 8370f60f87538940d2b4afb046df006b77a8dc3d
-
-
-### 2. Запуск бази даних через Docker
-
-```docker compose up -d```
-
-
-
+```make stop```
 
