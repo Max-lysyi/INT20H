@@ -14,6 +14,10 @@ import {
   Calculator, 
 } from "lucide-react";
 
+const API_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://int20h-4ei5.onrender.com/' 
+  : 'http://localhost:5000';
+
 const LoginScreen = ({ onLogin }) => {
   useEffect(() => {
     document.title = "LoginScreen";
@@ -146,7 +150,7 @@ const AdminPanel = () => {
   const fetchOrders = async (page = 1, search = searchTerm) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/orders?page=${page}&limit=10&search=${search}`,
+        `${API_URL}/?page=${page}&limit=10&search=${search}`,
       );
       const data = await response.json();
 
@@ -175,7 +179,7 @@ const AdminPanel = () => {
       skipEmptyLines: true,
       complete: async (results) => {
         try {
-          const response = await fetch("http://localhost:5000/orders/import", {
+          const response = await fetch(`${API_URL}/orders/import`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(results.data),
@@ -208,7 +212,7 @@ const AdminPanel = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/orders", {
+      const response = await fetch(`${API_URL}/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -235,7 +239,7 @@ const AdminPanel = () => {
       window.confirm("Ви впевнені, що хочете видалити ВСІ замовлення з бази?")
     ) {
       try {
-        await fetch("http://localhost:5000/orders", { method: "DELETE" });
+        await fetch(`${API_URL}/orders`, { method: "DELETE" });
         fetchOrders(1);
       } catch (err) {
         console.error(err);
