@@ -2,12 +2,15 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const { Pool } = require("pg");
+const path = require('path');
 
 const app = express();
 const port = 5000;
+const distPath = path.join(__dirname, '../dist');
 
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(cors());
+app.use(express.static(distPath));
 
 if (!globalThis.fetch) {
   console.warn(
@@ -17,7 +20,7 @@ if (!globalThis.fetch) {
 
 const pool = new Pool({
   user: "postgres",
-  host: "localhost",
+  host: "postgis",
   database: "delivery_db",
   password: "root",
   port: 5432,
@@ -224,6 +227,11 @@ app.delete("/orders", async (req, res) => {
   } catch (err) {
     console.error(err);
   }
+});
+
+
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
 });
 
 app.listen(port, () => {
