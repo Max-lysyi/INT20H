@@ -30,7 +30,7 @@ jobs:
 
   docker-build:
     name: Test Docker Build
-    needs: build-and-test
+    needs: build
     runs-on: ubuntu-latest
 
     steps:
