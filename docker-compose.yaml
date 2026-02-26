@@ -5,10 +5,10 @@ services:
       dockerfile: Dockerfile
     container_name: betterme-app
     ports:
-      - "5000:5000"
+      - "10000:10000"
     environment:
       - NODE_ENV=production
-      - PORT=5000
+      - PORT=10000
     depends_on:
       - postgis
     restart: unless-stopped
