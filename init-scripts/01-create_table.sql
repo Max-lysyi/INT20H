@@ -8,3 +8,5 @@ CREATE TABLE orders (
     jurisdiction VARCHAR(255),
     created_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE EXTENSION IF NOT EXISTS postgis;

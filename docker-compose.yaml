@@ -14,7 +14,9 @@ services:
     restart: unless-stopped
 
   postgis:
-    image: postgis/postgis:16-3.4-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile.database
     container_name: postgis
     ports:
       - "5432:5432"
@@ -25,6 +27,7 @@ services:
     volumes:
       - postgis_data:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d
+      - ./data:/data_in_container:ro
     restart: unless-stopped
 
 volumes:
