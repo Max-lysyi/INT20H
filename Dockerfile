@@ -17,6 +17,11 @@ RUN npm ci --omit=dev
 
 COPY server/ ./server/
 
+# --- ОСЬ ЦЕЙ РЯДОК МИ ДОДАЛИ ---
+# Заходимо в папку сервера і встановлюємо бібліотеки (express, pg, cors)
+RUN cd server && npm install --omit=dev
+# -------------------------------
+
 COPY --from=builder /app/dist ./dist
 
 EXPOSE 5000
