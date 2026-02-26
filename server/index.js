@@ -2,12 +2,15 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const { Pool } = require("pg");
+const path = require("path");
 
 const app = express();
 const port = 5000;
+const distPath = path.join(__dirname, "../dist");
 
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(cors());
+app.use(express.static(distPath));
 
 if (!globalThis.fetch) {
   console.warn(
@@ -17,96 +20,57 @@ if (!globalThis.fetch) {
 
 const pool = new Pool({
   user: "postgres",
-  host: "localhost",
+  host: "postgis", 
   database: "delivery_db",
   password: "root",
   port: 5432,
 });
 
-function getFastJurisdiction(lat, lon) {
-  const latitude = parseFloat(lat);
-  const longitude = parseFloat(lon);
-
-  if (
-    latitude >= 40.49 &&
-    latitude <= 40.92 &
-    longitude >= -74.26 &&
-    longitude <= -73.69
-  )
-    return { name: "New York City", rate: 0.08875 };
-  if (
-    latitude >= 42.58 &&
-    latitude <= 42.77 &&
-    longitude >= -74.0 &&
-    longitude <= -73.7
-  )
-    return { name: "Albany County", rate: 0.08 };
-  if (
-    latitude >= 42.99 &&
-    latitude <= 43.08 &&
-    longitude >= -76.2 &&
-    longitude <= -76.07
-  )
-    return { name: "Syracuse (Onondaga)", rate: 0.08 };
-  if (
-    latitude >= 40.9 &&
-    latitude <= 41.0 &&
-    longitude >= -73.93 &&
-    longitude <= -73.83
-  )
-    return { name: "Yonkers", rate: 0.08875 };
-
-  return { name: "New York State (Other)", rate: 0.04 };
-}
-
-async function getRealJurisdictionFromAPI(lat, lon) {
+async function getJurisdictionFromPostGIS(lat, lon) {
   try {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`;
-    const response = await fetch(url, {
-      headers: { "User-Agent": "BetterMe-Test-Task/1.0" },
-    });
+    const query = `
+      SELECT name 
+      FROM tax_regions 
+      WHERE ST_Contains(geom, ST_SetSRID(ST_MakePoint($1, $2), 4326))
+      LIMIT 1;
+    `;
 
-    if (!response.ok) throw new Error("API Error");
+    const result = await pool.query(query, [parseFloat(lon), parseFloat(lat)]);
 
-    const data = await response.json();
-    const address = data.address || {};
+    if (result.rows.length > 0) {
+      const regionName = result.rows[0].name;
 
-    console.log(
-      "📍 API знайшло адресу:",
-      address.city || address.town || address.county,
-    );
-
-    if (
-      [
+      const nycCounties = [
         "New York",
-        "Manhattan",
-        "Brooklyn",
-        "Queens",
+        "Kings",
         "Bronx",
-        "Staten Island",
-      ].includes(address.city || address.suburb)
-    ) {
-      return { name: "New York City (Verified API)", rate: 0.08875 };
-    }
-    if (address.county === "Albany County" || address.city === "Albany") {
-      return { name: "Albany (Verified API)", rate: 0.08 };
-    }
-    if (address.city === "Syracuse" || address.county === "Onondaga County") {
-      return { name: "Syracuse (Verified API)", rate: 0.08 };
-    }
-    if (address.city === "Yonkers") {
-      return { name: "Yonkers (Verified API)", rate: 0.08875 };
-    }
+        "Queens",
+        "Richmond",
+        "New York County",
+        "Kings County",
+        "Bronx County",
+        "Queens County",
+        "Richmond County",
+      ];
 
-    const localName =
-      address.city || address.town || address.village || "NY State Location";
-    return { name: `${localName} (State Tax)`, rate: 0.04 };
+      if (nycCounties.includes(regionName))
+        return { name: "New York City", rate: 0.08875 };
+      if (regionName.includes("Albany"))
+        return { name: "Albany County", rate: 0.08 };
+      if (regionName.includes("Onondaga"))
+        return { name: "Syracuse (Onondaga)", rate: 0.08 };
+      if (regionName.includes("Westchester"))
+        return { name: "Westchester / Yonkers", rate: 0.08875 };
+
+      return { name: `${regionName} (State Tax)`, rate: 0.04 };
+    } else {
+      return { name: "Out of NY State", rate: 0.0 };
+    }
   } catch (error) {
-    console.error("API Failed, using fallback:", error.message);
-    return getFastJurisdiction(lat, lon);
+    console.error("PostGIS Error:", error.message);
+    return { name: "New York State (Fallback)", rate: 0.04 };
   }
 }
-
 
 app.get("/orders", async (req, res) => {
   try {
@@ -161,7 +125,8 @@ app.get("/orders", async (req, res) => {
 app.post("/orders", async (req, res) => {
   try {
     const { latitude, longitude, subtotal } = req.body;
-    const taxInfo = await getRealJurisdictionFromAPI(latitude, longitude);
+
+    const taxInfo = await getJurisdictionFromPostGIS(latitude, longitude);
 
     const taxAmount = (subtotal * taxInfo.rate).toFixed(2);
     const totalAmount = (parseFloat(subtotal) + parseFloat(taxAmount)).toFixed(
@@ -188,7 +153,11 @@ app.post("/orders/import", async (req, res) => {
     for (const row of ordersData) {
       if (!row.latitude || !row.longitude || !row.subtotal) continue;
 
-      const taxInfo = getFastJurisdiction(row.latitude, row.longitude);
+      const taxInfo = await getJurisdictionFromPostGIS(
+        row.latitude,
+        row.longitude,
+      );
+
       const taxAmount = (row.subtotal * taxInfo.rate).toFixed(2);
       const totalAmount = (
         parseFloat(row.subtotal) + parseFloat(taxAmount)
@@ -224,6 +193,10 @@ app.delete("/orders", async (req, res) => {
   } catch (err) {
     console.error(err);
   }
+});
+
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(distPath, "index.html"));
 });
 
 app.listen(port, () => {
