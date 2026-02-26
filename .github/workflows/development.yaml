@@ -1,0 +1,41 @@
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Отримання коду проєкту (Checkout)
+        uses: actions/checkout@v4
+
+      - name: Налаштування Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Встановлення залежностей
+        run: npm ci
+
+      - name: Перевірка коду (ESLint)
+        run: npm run lint || true 
+
+      - name: Збірка фронтенду (Vite)
+        run: npm run build
+
+  docker-build:
+    name: Test Docker Build
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Отримання коду проєкту
+        uses: actions/checkout@v4
+
+      - name: Перевірка збірки Docker-образу
+        run: docker build -t betterme-app .
