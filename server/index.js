@@ -5,7 +5,7 @@ const { Pool } = require("pg");
 const path = require("path");
 
 const app = express();
-const port = 5000;
+const port = process.env.PORT;
 const distPath = path.join(__dirname, "../dist");
 
 app.use(bodyParser.json({ limit: "50mb" }));
@@ -19,11 +19,18 @@ if (!globalThis.fetch) {
 }
 
 const pool = new Pool({
-  user: "postgres",
-  host: "postgis", 
-  database: "delivery_db",
-  password: "root",
-  port: 5432,
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
+
+pool.connect((err, client, release) => {
+  if (err) {
+    return console.error('Помилка підключення до бази:', err.stack);
+  }
+  console.log('Успішно підключено до Supabase!');
+  release();
 });
 
 async function getJurisdictionFromPostGIS(lat, lon) {
@@ -199,6 +206,6 @@ app.get(/.*/, (req, res) => {
   res.sendFile(path.join(distPath, "index.html"));
 });
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0' () => {
   console.log(`🚀 Server running on port ${port}`);
 });

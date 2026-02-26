@@ -24,6 +24,6 @@ RUN cd server && npm install --omit=dev
 
 COPY --from=builder /app/dist ./dist
 
-EXPOSE 5000
+EXPOSE 10000
 
 CMD ["node", "server/index.js"]
