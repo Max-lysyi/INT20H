@@ -151,45 +151,49 @@ app.post("/orders", async (req, res) => {
   }
 });
 
-app.post("/orders/import", async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const ordersData = req.body;
-    await client.query("BEGIN");
+app.post("/orders/import", upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: "Файл не завантажено" });
 
-    for (const row of ordersData) {
-      if (!row.latitude || !row.longitude || !row.subtotal) continue;
+  const results = [];
+  
+  fs.createReadStream(req.file.path)
+    .pipe(csv())
+    .on('data', (data) => results.push(data))
+    .on('end', async () => {
+      const client = await pool.connect();
+      try {
+        await client.query("BEGIN");
 
-      const taxInfo = await getJurisdictionFromPostGIS(
-        row.latitude,
-        row.longitude,
-      );
+        for (const row of results) {
+          const lat = parseFloat(row.latitude);
+          const lon = parseFloat(row.longitude);
+          const subtotal = parseFloat(row.subtotal);
 
-      const taxAmount = (row.subtotal * taxInfo.rate).toFixed(2);
-      const totalAmount = (
-        parseFloat(row.subtotal) + parseFloat(taxAmount)
-      ).toFixed(2);
+          if (isNaN(lat) || isNaN(lon) || isNaN(subtotal)) continue;
 
-      await client.query(
-        "INSERT INTO orders (latitude, longitude, subtotal, tax_amount, total_amount, jurisdiction) VALUES ($1, $2, $3, $4, $5, $6)",
-        [
-          row.latitude,
-          row.longitude,
-          row.subtotal,
-          taxAmount,
-          totalAmount,
-          taxInfo.name,
-        ],
-      );
-    }
-    await client.query("COMMIT");
-    res.json({ message: "Import successful" });
-  } catch (err) {
-    await client.query("ROLLBACK");
-    res.status(500).send("Import Failed");
-  } finally {
-    client.release();
-  }
+          const taxInfo = await getJurisdictionFromPostGIS(lat, lon);
+
+          const taxAmount = (subtotal * taxInfo.rate).toFixed(2);
+          const totalAmount = (subtotal + parseFloat(taxAmount)).toFixed(2);
+
+          // Тут ваш INSERT запит...
+          await client.query(
+            "INSERT INTO orders (latitude, longitude, subtotal, tax_amount, total_amount, jurisdiction) VALUES ($1, $2, $3, $4, $5, $6)",
+            [lat, lon, subtotal, taxAmount, totalAmount, taxInfo.name]
+          );
+        }
+
+        await client.query("COMMIT");
+        res.json({ message: `Успішно імпортовано ${results.length} записів` });
+      } catch (e) {
+        await client.query("ROLLBACK");
+        console.error(e);
+        res.status(500).json({ error: "Помилка бази даних" });
+      } finally {
+        client.release();
+        fs.unlinkSync(req.file.path); // Видаляємо тимчасовий файл
+      }
+    });
 });
 
 app.delete("/orders", async (req, res) => {

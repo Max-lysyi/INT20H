@@ -179,7 +179,6 @@ const AdminPanel = () => {
         try {
           const response = await fetch(`${API_URL}/orders/import`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(results.data),
           });
           if (response.ok) {
