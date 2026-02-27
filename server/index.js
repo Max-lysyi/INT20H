@@ -3,6 +3,7 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const { Pool } = require("pg");
 const path = require("path");
+const multer = require('multer');
 
 const app = express();
 const port = process.env.PORT;
