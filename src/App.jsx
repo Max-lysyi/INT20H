@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 const API_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://int20h-4ei5.onrender.com/' 
+  ? 'https://int20h-4ei5.onrender.com' 
   : 'http://localhost:5000';
 
 const LoginScreen = ({ onLogin }) => {
