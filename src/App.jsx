@@ -14,9 +14,9 @@ import {
   Calculator, 
 } from "lucide-react";
 
-const API_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://int20h-4ei5.onrender.com' 
-  : 'http://localhost:5000';
+const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:10000'
+  : 'https://int20h-4ei5.onrender.com';
 
 const LoginScreen = ({ onLogin }) => {
   useEffect(() => {
