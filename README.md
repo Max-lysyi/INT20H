@@ -89,8 +89,6 @@ docker exec -it postgis psql -U postgres -d delivery_db
 # Check orders table
 SELECT * FROM orders LIMIT 10;
 
-# Verify geographic data
-SELECT * FROM tax_jurisdictions;
 ```
 
 ---
