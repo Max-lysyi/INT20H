@@ -150,7 +150,7 @@ const AdminPanel = () => {
   const fetchOrders = async (page = 1, search = searchTerm) => {
     try {
       const response = await fetch(
-        `${API_URL}/?page=${page}&limit=10&search=${search}`,
+        `${API_URL}/orders?page=${page}&limit=10&search=${search}`,
       );
       const data = await response.json();
 
