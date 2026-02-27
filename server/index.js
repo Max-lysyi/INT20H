@@ -5,6 +5,7 @@ const { Pool } = require("pg");
 const path = require("path");
 const multer = require('multer');
 const csv = require('csv-parser');
+const format = require('pg-format');
 const fs = require('fs');
 const app = express();
 const port = process.env.PORT;
@@ -24,16 +25,16 @@ if (!globalThis.fetch) {
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
+  ssl: process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL?.includes('postgis') ? {
     rejectUnauthorized: false
-  }
+  } : false
 });
 
 pool.connect((err, client, release) => {
   if (err) {
     return console.error('Помилка підключення до бази:', err.stack);
   }
-  console.log('Успішно підключено до Supabase!');
+  console.log('Успішно підключено до PostgreSQL!');
   release();
 });
 
@@ -156,55 +157,70 @@ app.post("/orders", async (req, res) => {
 });
 
 app.post("/orders/import", upload.single('file'), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: "Файл не знайдено" });
-  }
+    if (!req.file) return res.status(400).json({ error: "Файл не знайдено" });
 
-  const results = [];
-  const client = await pool.connect();
+    const client = await pool.connect();
+    let count = 0;
+    let batch = [];
+    const BATCH_SIZE = 200; // Оптимальний розмір для швидкості
 
-  fs.createReadStream(req.file.path)
-    .pipe(csv())
-    .on('data', (data) => results.push(data))
-    .on('end', async () => {
-      try {
+    try {
         await client.query("BEGIN");
 
-        for (const row of results) {
-          const lat = parseFloat(row.latitude);
-          const lon = parseFloat(row.longitude);
-          const subtotal = parseFloat(row.subtotal);
+        const stream = fs.createReadStream(req.file.path).pipe(csv());
 
-          if (isNaN(lat) || isNaN(lon) || isNaN(subtotal)) continue;
+        for await (const row of stream) {
+            const lat = parseFloat(row.latitude);
+            const lon = parseFloat(row.longitude);
+            const subtotal = parseFloat(row.subtotal);
 
-          const taxInfo = await getJurisdictionFromPostGIS(lat, lon);
+            if (isNaN(lat) || isNaN(lon) || isNaN(subtotal)) continue;
 
-          const taxAmount = (subtotal * taxInfo.rate).toFixed(2);
-          const totalAmount = (subtotal + parseFloat(taxAmount)).toFixed(2);
+            // Додаємо дані в масив для масового вставки
+            batch.push([lat, lon, subtotal]);
+            count++;
 
-          await client.query(
-            `INSERT INTO orders (latitude, longitude, subtotal, tax_amount, total_amount, jurisdiction) 
-             VALUES ($1, $2, $3, $4, $5, $6)`,
-            [lat, lon, subtotal, taxAmount, totalAmount, taxInfo.name]
-          );
+            // Якщо назбирали пачку — записуємо в базу одним махом
+            if (batch.length >= BATCH_SIZE) {
+                await insertBatch(client, batch);
+                batch = []; 
+            }
         }
+
+        // Дозаписуємо залишок
+        if (batch.length > 0) await insertBatch(client, batch);
 
         await client.query("COMMIT");
-        res.json({ message: `Успішно імпортовано ${results.length} записів` });
+        res.json({ message: `Успішно імпортовано ${count} записів` });
 
-      } catch (error) {
+    } catch (error) {
         await client.query("ROLLBACK");
-        console.error("Помилка імпорту:", error);
-        res.status(500).json({ error: "Помилка при збереженні в базу" });
-      } finally {
+        console.error("Помилка:", error);
+        res.status(500).json({ error: "Помилка імпорту" });
+    } finally {
         client.release();
-        if (fs.existsSync(req.file.path)) {
-          fs.unlinkSync(req.file.path);
-        }
-      }
-    });
+        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+    }
 });
 
+// Функція масової вставки з логікою PostGIS всередині SQL
+async function insertBatch(client, data) {
+    // Ми передаємо lat/lon, а SQL сам шукає юрисдикцію через ST_Contains
+    // Це в рази швидше, ніж робити окремі запити з Node.js
+    const sql = format(`
+        INSERT INTO orders (latitude, longitude, subtotal, tax_amount, total_amount, jurisdiction)
+        SELECT 
+            v.lat, v.lon, v.subtotal,
+            (v.subtotal * j.rate) as tax_amount,
+            (v.subtotal + (v.subtotal * j.rate)) as total_amount,
+            j.name
+        FROM (VALUES %L) AS v(lat, lon, subtotal)
+        LEFT JOIN jurisdictions j ON ST_Contains(j.geom, ST_SetSRID(ST_Point(v.lon, v.lat), 4326))
+        LIMIT 1
+    `, data);
+
+    await client.query(sql);
+}
 app.delete("/orders", async (req, res) => {
   try {
     await pool.query("DELETE FROM orders");

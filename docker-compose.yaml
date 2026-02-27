@@ -9,6 +9,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=10000
+      - DATABASE_URL=postgres://postgres:root@postgis:5432/delivery_db
     depends_on:
       - postgis
     restart: unless-stopped
