@@ -11,10 +11,11 @@ import {
   Lock,
   Trash2,
   Filter,
-  Calculator, 
+  Calculator,
 } from "lucide-react";
 
-const API_URL = '' 
+// API URL - empty string for same-origin requests (backend serves both frontend and API)
+const API_URL = ''
 
 const LoginScreen = ({ onLogin }) => {
   useEffect(() => {
