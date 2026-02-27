@@ -197,42 +197,6 @@ const handleFileUpload = async (event) => {
   }
 };
 
-const csv = require('csv-parser');
-const fs = require('fs');
-
-app.post("/orders/import", upload.single('file'), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: "Файл не отримано" });
-  }
-
-  const results = [];
-  
-  // Створюємо потік для читання завантаженого файлу
-  fs.createReadStream(req.file.path)
-    .pipe(csv())
-    .on('data', (data) => results.push(data))
-    .on('end', async () => {
-      const client = await pool.connect();
-      try {
-        await client.query("BEGIN");
-        
-        for (const row of results) {
-          // row.latitude, row.longitude — мають відповідати назвам колонок у CSV
-          // Ваша логіка з getJurisdictionFromPostGIS...
-        }
-
-        await client.query("COMMIT");
-        res.json({ message: "Імпорт завершено успішно" });
-      } catch (e) {
-        await client.query("ROLLBACK");
-        res.status(500).json({ error: e.message });
-      } finally {
-        client.release();
-        fs.unlinkSync(req.file.path); // Видаляємо тимчасовий файл після обробки
-      }
-    });
-});
-
   const handleSubmitNewOrder = async () => {
     if (
       !newOrderForm.latitude ||
