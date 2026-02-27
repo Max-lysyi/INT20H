@@ -9,6 +9,8 @@ const app = express();
 const port = process.env.PORT;
 const distPath = path.join(__dirname, "../dist");
 
+const upload = multer({ dest: '/tmp/' });
+
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(cors());
 app.use(express.static(distPath));
