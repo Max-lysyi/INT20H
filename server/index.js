@@ -4,7 +4,8 @@ const bodyParser = require("body-parser");
 const { Pool } = require("pg");
 const path = require("path");
 const multer = require('multer');
-
+const csv = require('csv-parser');
+const fs = require('fs');
 const app = express();
 const port = process.env.PORT;
 const distPath = path.join(__dirname, "../dist");
@@ -155,15 +156,17 @@ app.post("/orders", async (req, res) => {
 });
 
 app.post("/orders/import", upload.single('file'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: "Файл не завантажено" });
+  if (!req.file) {
+    return res.status(400).json({ error: "Файл не знайдено" });
+  }
 
   const results = [];
-  
+  const client = await pool.connect();
+
   fs.createReadStream(req.file.path)
     .pipe(csv())
     .on('data', (data) => results.push(data))
     .on('end', async () => {
-      const client = await pool.connect();
       try {
         await client.query("BEGIN");
 
@@ -179,22 +182,25 @@ app.post("/orders/import", upload.single('file'), async (req, res) => {
           const taxAmount = (subtotal * taxInfo.rate).toFixed(2);
           const totalAmount = (subtotal + parseFloat(taxAmount)).toFixed(2);
 
-          // Тут ваш INSERT запит...
           await client.query(
-            "INSERT INTO orders (latitude, longitude, subtotal, tax_amount, total_amount, jurisdiction) VALUES ($1, $2, $3, $4, $5, $6)",
+            `INSERT INTO orders (latitude, longitude, subtotal, tax_amount, total_amount, jurisdiction) 
+             VALUES ($1, $2, $3, $4, $5, $6)`,
             [lat, lon, subtotal, taxAmount, totalAmount, taxInfo.name]
           );
         }
 
         await client.query("COMMIT");
         res.json({ message: `Успішно імпортовано ${results.length} записів` });
-      } catch (e) {
+
+      } catch (error) {
         await client.query("ROLLBACK");
-        console.error(e);
-        res.status(500).json({ error: "Помилка бази даних" });
+        console.error("Помилка імпорту:", error);
+        res.status(500).json({ error: "Помилка при збереженні в базу" });
       } finally {
         client.release();
-        fs.unlinkSync(req.file.path); // Видаляємо тимчасовий файл
+        if (fs.existsSync(req.file.path)) {
+          fs.unlinkSync(req.file.path);
+        }
       }
     });
 });

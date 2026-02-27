@@ -166,37 +166,72 @@ const AdminPanel = () => {
     fetchOrders(1);
   }, []);
 
-  const handleFileUpload = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
+const handleFileUpload = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
 
-    setLoading(true);
+  const formData = new FormData();
+  formData.append('file', file);
 
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async (results) => {
-        try {
-          const response = await fetch(`${API_URL}/orders/import`, {
-            method: "POST",
-            body: JSON.stringify(results.data),
-          });
-          if (response.ok) {
-            alert(`Success! Imported ${results.data.length} orders.`);
-            fetchOrders(1);
-          } else {
-            alert("Server error during import.");
-          }
-        } catch (err) {
-          console.error("Import failed:", err);
-          alert("Network error.");
-        } finally {
-          setLoading(false);
-          event.target.value = null;
-        }
-      },
+  setLoading(true);
+  try {
+    const response = await fetch(`${API_URL}/orders/import`, {
+      method: "POST",
+      body: formData,
     });
-  };
+
+    if (response.ok) {
+      const result = await response.json();
+      alert(`Успішно! Імпортовано.`);
+      fetchOrders(1);
+    } else {
+      const errorData = await response.json();
+      alert(`Помилка сервера: ${errorData.error || 'Невідома помилка'}`);
+    }
+  } catch (err) {
+    console.error("Import failed:", err);
+    alert("Мережева помилка.");
+  } finally {
+    setLoading(false);
+    event.target.value = null;
+  }
+};
+
+const csv = require('csv-parser');
+const fs = require('fs');
+
+app.post("/orders/import", upload.single('file'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: "Файл не отримано" });
+  }
+
+  const results = [];
+  
+  // Створюємо потік для читання завантаженого файлу
+  fs.createReadStream(req.file.path)
+    .pipe(csv())
+    .on('data', (data) => results.push(data))
+    .on('end', async () => {
+      const client = await pool.connect();
+      try {
+        await client.query("BEGIN");
+        
+        for (const row of results) {
+          // row.latitude, row.longitude — мають відповідати назвам колонок у CSV
+          // Ваша логіка з getJurisdictionFromPostGIS...
+        }
+
+        await client.query("COMMIT");
+        res.json({ message: "Імпорт завершено успішно" });
+      } catch (e) {
+        await client.query("ROLLBACK");
+        res.status(500).json({ error: e.message });
+      } finally {
+        client.release();
+        fs.unlinkSync(req.file.path); // Видаляємо тимчасовий файл після обробки
+      }
+    });
+});
 
   const handleSubmitNewOrder = async () => {
     if (
