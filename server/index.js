@@ -210,12 +210,12 @@ async function insertBatch(client, data) {
   const sql = format(`
       INSERT INTO orders (latitude, longitude, subtotal, tax_amount, total_amount, jurisdiction)
       SELECT 
-          v.lat, v.lon, v.subtotal,
-          (v.subtotal * 0.08875) as tax_amount,
-          (v.subtotal + (v.subtotal * 0.08875)) as total_amount,
+          v.lat::numeric, v.lon::numeric, v.subtotal::numeric,
+          (v.subtotal::numeric * 0.08875) as tax_amount,
+          (v.subtotal::numeric + (v.subtotal::numeric * 0.08875)) as total_amount,
           j.name
       FROM (VALUES %L) AS v(lat, lon, subtotal)
-      LEFT JOIN tax_regions j ON ST_Contains(j.geom, ST_SetSRID(ST_Point(v.lon, v.lat), 4326))
+      LEFT JOIN tax_regions j ON ST_Contains(j.geom, ST_SetSRID(ST_Point(v.lon::numeric, v.lat::numeric), 4326))
       LIMIT 1
   `, data);
     await client.query(sql);
