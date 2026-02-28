@@ -102,8 +102,15 @@ make start    # Start all services
 ```
 
 ### Access Points
-- **Frontend:** `http://localhost:10000` (or configured port)
+- **Frontend:** `http://0.0.0.0:10000` (or configured port)
+- **Admin password:** `fitherin322`
 - **Database:** `localhost:5432`
+- **Backend:** 
+`GET http://0.0.0.0:10000/orders
+POST http://0.0.0.0:10000/orders/import
+DELETE http://0.0.0.0:10000/orders
+POST http://0.0.0.0:10000/orders
+`
 
 ### Stop the Application
 ```bash
