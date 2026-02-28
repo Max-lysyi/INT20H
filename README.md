@@ -104,7 +104,7 @@ make start    # Start all services
 ### Access Points
 - **Frontend:** `http://0.0.0.0:10000` or `https://int20h-4ei5.onrender.com/`
 - **Admin password:** `fitherin322`
-- **Database:** `localhost:5432`
+- **Database:** `0.0.0.0:5432`
 - **Backend:** 
 `GET http://0.0.0.0:10000/orders`
 `POST http://0.0.0.0:10000/orders/import`
@@ -141,15 +141,8 @@ INT20H/
 
 ## 🔧 Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PORT` | Application port | `10000` |
-| `NODE_ENV` | Environment mode | `production` |
-| `DATABASE_URL` | PostgreSQL connection string | `postgres://postgres:root@postgis:5432/delivery_db` |
-| `POSTGRES_USER` | PostgreSQL user | `postgres`
-| `POSTGRES_PASSWORD` | PostgreSQL password | `root` |
-| `POSTGRES_DB` | PostgreSQL database | `delivery_db` |
-
+> [!NOTE]
+> All environment variables set by default in docker-compose file.
 
 ---
 
