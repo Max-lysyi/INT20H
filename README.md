@@ -146,6 +146,10 @@ INT20H/
 | `PORT` | Application port | `10000` |
 | `NODE_ENV` | Environment mode | `production` |
 | `DATABASE_URL` | PostgreSQL connection string | `postgres://postgres:root@postgis:5432/delivery_db` |
+| `POSTGRES_USER` | PostgreSQL user | `postgres`
+| `POSTGRES_PASSWORD` | PostgreSQL password | `root` |
+| `POSTGRES_DB` | PostgreSQL database | `delivery_db` |
+
 
 ---
 
