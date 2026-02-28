@@ -102,7 +102,7 @@ make start    # Start all services
 ```
 
 ### Access Points
-- **Frontend:** `http://0.0.0.0:10000` (or configured port)
+- **Frontend:** `http://0.0.0.0:10000` or `https://int20h-4ei5.onrender.com/`
 - **Admin password:** `fitherin322`
 - **Database:** `localhost:5432`
 - **Backend:** 
