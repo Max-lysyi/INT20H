@@ -106,11 +106,11 @@ make start    # Start all services
 - **Admin password:** `fitherin322`
 - **Database:** `localhost:5432`
 - **Backend:** 
-`GET http://0.0.0.0:10000/orders
-POST http://0.0.0.0:10000/orders/import
-DELETE http://0.0.0.0:10000/orders
-POST http://0.0.0.0:10000/orders
-`
+`GET http://0.0.0.0:10000/orders`
+`POST http://0.0.0.0:10000/orders/import`
+`DELETE http://0.0.0.0:10000/orders`
+`POST http://0.0.0.0:10000/orders`
+
 
 ### Stop the Application
 ```bash
