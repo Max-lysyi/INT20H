@@ -207,20 +207,20 @@ app.post("/orders/import", upload.single('file'), async (req, res) => {
 async function insertBatch(client, data) {
     // Ми передаємо lat/lon, а SQL сам шукає юрисдикцію через ST_Contains
     // Це в рази швидше, ніж робити окремі запити з Node.js
-    const sql = format(`
-        INSERT INTO orders (latitude, longitude, subtotal, tax_amount, total_amount, jurisdiction)
-        SELECT 
-            v.lat, v.lon, v.subtotal,
-            (v.subtotal * j.rate) as tax_amount,
-            (v.subtotal + (v.subtotal * j.rate)) as total_amount,
-            j.name
-        FROM (VALUES %L) AS v(lat, lon, subtotal)
-        LEFT JOIN jurisdictions j ON ST_Contains(j.geom, ST_SetSRID(ST_Point(v.lon, v.lat), 4326))
-        LIMIT 1
-    `, data);
-
+  const sql = format(`
+      INSERT INTO orders (latitude, longitude, subtotal, tax_amount, total_amount, jurisdiction)
+      SELECT 
+          v.lat, v.lon, v.subtotal,
+          (v.subtotal * 0.08875) as tax_amount,
+          (v.subtotal + (v.subtotal * 0.08875)) as total_amount,
+          j.name
+      FROM (VALUES %L) AS v(lat, lon, subtotal)
+      LEFT JOIN tax_regions j ON ST_Contains(j.geom, ST_SetSRID(ST_Point(v.lon, v.lat), 4326))
+      LIMIT 1
+  `, data);
     await client.query(sql);
 }
+
 app.delete("/orders", async (req, res) => {
   try {
     await pool.query("DELETE FROM orders");
