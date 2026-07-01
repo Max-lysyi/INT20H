@@ -14,8 +14,8 @@ import {
   Calculator,
 } from "lucide-react";
 
-// API URL - empty string for same-origin requests (backend serves both frontend and API)
-const API_URL = ''
+// API URL - falls back to empty string for same-origin requests or uses Vite env variable
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 const LoginScreen = ({ onLogin }) => {
   useEffect(() => {

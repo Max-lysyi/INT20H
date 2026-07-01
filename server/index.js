@@ -23,9 +23,15 @@ if (!globalThis.fetch) {
   );
 }
 
+const connectionString = process.env.DATABASE_URL;
+const isLocal = !connectionString || 
+                connectionString.includes('postgis') || 
+                connectionString.includes('localhost') || 
+                connectionString.includes('127.0.0.1');
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL?.includes('postgis') ? {
+  connectionString,
+  ssl: !isLocal ? {
     rejectUnauthorized: false
   } : false
 });
